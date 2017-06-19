@@ -146,8 +146,10 @@ void drawBeachLine(float sweepLine, vertArray vertices) {
         float x = i;
         // From DeBerg's "Algorithms and Applications"
         float y = beachLineFunc(x, vertices.verts[j], sweepLine);
-        if(getDist((v2){x, y}, vertices.verts[j]) > getDist((v2){x, y}, vertices.verts[(j+1)% vertices.vertCount]))
-          y = beachLineFunc(x, vertices.verts[(j+1)%vertices.vertCount], sweepLine);
+        for(int k = 0; k < vertices.vertCount;k++) {
+          if(getDist((v2){x, y}, vertices.verts[j]) > getDist((v2){x, y}, vertices.verts[k]))
+            y = beachLineFunc(x, vertices.verts[k], sweepLine);
+        }
         glVertex2f(x, y);
       }
       glEnd();

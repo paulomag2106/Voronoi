@@ -84,9 +84,7 @@ int main() {
     glEnd();
 
     // draw beach line between sweep line and vertices
-    for(int i = 0; i < vertices.vertCount;i++) {
-      drawBeachLine(sweepLine, vertices.verts[i]);
-    }
+    drawBeachLine(sweepLine, vertices);
 
     if(yScroll < 0) yScroll = 0;
 

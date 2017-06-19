@@ -51,4 +51,4 @@ void scrollBot(GLFWwindow *window);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 float beachLineFunc(float x, v2 site, float sweepLine);
 v2 beachLineIntersection(v2 siteA, v2 siteB, float sweepLine);
-void drawBeachLine(float sweepLine, v2 vertex);
+void drawBeachLine(float sweepLine, vertArray vertex);

@@ -25,7 +25,7 @@ float getMax(float a, float b) {
 
 float getDist(v2 a, v2 b) {
   float result = sqrt(((a.x-b.x)*(a.x-b.x)) + ((a.y-b.y)*(a.y-b.y)));
-  printf("%f\n", result);
+  // printf("%f\n", result);
   return result;
 }
 
@@ -127,26 +127,30 @@ v2 beachLineIntersection(v2 siteA, v2 siteB, float sweepLine) {
   return result;
 }
 
-void drawBeachLine(float sweepLine, v2 vertex) {
+void drawBeachLine(float sweepLine, vertArray vertices) {
 
-  if(fabs(sweepLine-vertex.y) <= 0.1) {
-    // printf("braca!\n");
-    glColor3f(0, 1, 0);
-    glBegin(GL_LINES);
-    glVertex2f(vertex.x, 0);
-    glVertex2f(vertex.x, vertex.y);
-    glEnd();
-  } else if(sweepLine > vertex.y) {
+  for(int j = 0; j < vertices.vertCount;j++) {
+    if(fabs(sweepLine-vertices.verts[j].y) <= 0.1) {
+      // printf("braca!\n");
+      glColor3f(0, 1, 0);
+      glBegin(GL_LINES);
+      glVertex2f(vertices.verts[j].x, 0);
+      glVertex2f(vertices.verts[j].x, vertices.verts[j].y);
+      glEnd();
+    } else if(sweepLine > vertices.verts[j].y) {
 
-    // draw arch parabola of beach line
-    glColor3f(0, 1, 0);
-    glBegin(GL_LINE_STRIP);
-    for(int i = 0; i < width;i+=10) {
-      float x = i;
-      // From DeBerg's "Algorithms and Applications"
-      float y = beachLineFunc(x, vertex, sweepLine);
-      glVertex2f(x, y);
+      // draw arch parabola of beach line
+      glColor3f(0, 1, 0);
+      glBegin(GL_LINE_STRIP);
+      for(int i = 0; i < width;i+=1) {
+        float x = i;
+        // From DeBerg's "Algorithms and Applications"
+        float y = beachLineFunc(x, vertices.verts[j], sweepLine);
+        if(getDist((v2){x, y}, vertices.verts[j]) > getDist((v2){x, y}, vertices.verts[(j+1)% vertices.vertCount]))
+          y = beachLineFunc(x, vertices.verts[(j+1)%vertices.vertCount], sweepLine);
+        glVertex2f(x, y);
+      }
+      glEnd();
     }
-    glEnd();
   }
 }

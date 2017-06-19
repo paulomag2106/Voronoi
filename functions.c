@@ -38,37 +38,113 @@ float crossProduct2D(v2 a, v2 b) {
   return fabsf(a.x * b.y - a.y * b.x);
 }
 
-void makeVertex2D(queue_v2 *queue, GLFWwindow* window) {
+void makeVertex2D(vertArray *vertices, GLFWwindow* window) {
 
   double xpos, ypos;
   glfwGetCursorPos(window, &xpos, &ypos);
 
   int state = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-  if (state == GLFW_PRESS) {
-    printf("%lf, %lf\n", xpos, ypos);
-    queue->next = malloc(sizeof(queue_v2));
-    queue->next->value = (v2){xpos, ypos};
+  if(state == GLFW_PRESS && !clicked) {
+    clicked = !clicked;
+    vertices->vertCount++;
+    vertices->verts = vertices->verts == NULL ? malloc(sizeof(v2)) : realloc(vertices->verts, sizeof(v2)*(vertices->vertCount));
+    vertices->verts[vertices->vertCount-1] = (v2){xpos, ypos};
+    // printf("vertex[%d](%lf, %lf)\n", vertices->vertCount, xpos, ypos);
+  }
+  else if(state == GLFW_RELEASE && clicked) {
+    clicked = !clicked;
   }
 }
 
-void drawBeachLine(v2 *sweepLine, v2 vertex) {
+void scrollSweep(float *sweepLine, GLFWwindow* window) {
+  glfwSetScrollCallback(window, scroll_callback);
+  *sweepLine = yScroll;
+}
 
-  if(sweepLine[0].y == vertex.y) {
+void scrollTop(GLFWwindow *window) {
+  int state = glfwGetKey(window, GLFW_KEY_A);
+  if(state == GLFW_PRESS && !a_pressed) {
+    a_pressed = true;
+    scroll_top = !scroll_bot;
+  } else if(state == GLFW_RELEASE && a_pressed) {
+    a_pressed = false;
+  }
+}
 
+void scrollBot(GLFWwindow *window) {
+  int state = glfwGetKey(window, GLFW_KEY_D);
+  if(state == GLFW_PRESS && !d_pressed) {
+    d_pressed = true;
+    scroll_bot = !scroll_top;
+  } else if(state == GLFW_RELEASE && d_pressed) {
+    d_pressed = false;
+  }
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+  yScroll += yoffset;
+}
+
+void pauseAndStart(float sweepLine, GLFWwindow* window) {
+
+  int state = glfwGetKey(window, GLFW_KEY_SPACE);
+  if(state == GLFW_PRESS && !space_pressed) {
+    yScroll = sweepLine;
+    space_pressed = true;
+    paused = !paused;
+  } else if(state == GLFW_RELEASE && space_pressed) {
+    space_pressed = false;
+  }
+}
+
+// From DeBerg's "Algorithms and Applications"
+float beachLineFunc(float x, v2 site, float sweepLine) {
+  return ((x*x) - (2*(site.x)*x) + (site.x*site.x) + (site.y*site.y) - (sweepLine*sweepLine)) /
+                     (2.f*(site.y - sweepLine));
+}
+
+v2 beachLineIntersection(v2 siteA, v2 siteB, float sweepLine) {
+  v2 *beachLineA = NULL;
+  int pointCountA = 0;
+  for(int i = 0; i < width; i+= 5) {
+    beachLineA = beachLineA == NULL ? malloc(sizeof(v2)*(++pointCountA)) :
+                                      realloc(beachLineA, sizeof(v2)*(++pointCountA));
+    beachLineA[pointCountA-1] = (v2){i, beachLineFunc(i, siteA, sweepLine)};
+  }
+
+  v2 *beachLineB = NULL;
+  int pointCountB = 0;
+  for(int i = 0; i < width; i+= 5) {
+    beachLineB = beachLineB == NULL ? malloc(sizeof(v2)*(++pointCountB)) :
+                                      realloc(beachLineB, sizeof(v2)*(++pointCountB));
+    beachLineB[pointCountB-1] = (v2){i, beachLineFunc(i, siteB, sweepLine)};
+  }
+
+  free(beachLineA);
+  free(beachLineB);
+
+  v2 result = {0, 0};
+  return result;
+}
+
+void drawBeachLine(float sweepLine, v2 vertex) {
+
+  if(fabs(sweepLine-vertex.y) <= 0.1) {
+    // printf("braca!\n");
     glColor3f(0, 1, 0);
     glBegin(GL_LINES);
     glVertex2f(vertex.x, 0);
     glVertex2f(vertex.x, vertex.y);
     glEnd();
-  } else if(sweepLine[0].y > vertex.y) {
+  } else if(sweepLine > vertex.y) {
+
     // draw arch parabola of beach line
     glColor3f(0, 1, 0);
     glBegin(GL_LINE_STRIP);
-    for(int i = 0; i < width;i+=5) {
+    for(int i = 0; i < width;i+=10) {
       float x = i;
       // From DeBerg's "Algorithms and Applications"
-      float y = (1.f/(2.f*(vertex.y - sweepLine[0].y)))*((x*x) - (2*(vertex.x)*x) + (vertex.x*vertex.x) +
-                 (vertex.y*vertex.y) - (sweepLine[0].y*sweepLine[0].y));
+      float y = beachLineFunc(x, vertex, sweepLine);
       glVertex2f(x, y);
     }
     glEnd();

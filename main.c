@@ -1,18 +1,16 @@
 #include "functions.h"
 
-#define MAX_VERTS 50
-
 int main() {
+  width = 960;
+  height = 540;
 
-  // create vertex array
-  v2 vertices[MAX_VERTS];
-  for(int i = 0; i < MAX_VERTS;i++) {
-    vertices[i] = (v2){(rand() % 460) + 10, (rand() % 460) + 10};
-  }
-
-  // create sweepLine
-  v2 sweepLine[2] = {{0, 0},
-                     {480, 0}};
+  clicked = false;
+  space_pressed = false;
+  a_pressed = false;
+  d_pressed = false;
+  paused = true;
+  scroll_top = false;
+  scroll_bot = false;
 
   // Initialize the library
   if(!glfwInit())
@@ -21,11 +19,14 @@ int main() {
   // Create a windowed mode window and its OpenGL context
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  GLFWwindow* window = glfwCreateWindow(480, 480, "Voronoi Diagram", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(width, height, "Voronoi Diagram", NULL, NULL);
   if(!window) {
     glfwTerminate();
     return -1;
   }
+
+  // Set window aspect ratio
+  glfwSetWindowAspectRatio(window, 16, 9);
 
   // Make the window's context current
   glfwMakeContextCurrent(window);
@@ -33,18 +34,26 @@ int main() {
   // Clear color4
   glClearColor(0.2, 0.2, 0.2, 1);
 
+  // create vertex array
+  vertArray vertices;
+  vertices.vertCount = 0;
+  vertices.verts = NULL;
+
+  // create sweepLine
+  float sweepLine = 0;
+
   // Application loop while window is OpenGL
   while(!glfwWindowShouldClose(window) && !glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+    // printf("%d, %d\n", width, height);
 
     // update delta time
 		currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-    printf("%.2lf\n", 1.0/deltaTime);
+    // printf("%.2lf\n", 1.0/deltaTime);
 
     // Create Camera Matrix
     glfwGetFramebufferSize(window, &width, &height);
-    sweepLine[1].x = width;
 
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -58,27 +67,57 @@ int main() {
     glColor3f(1, 1, 1);
     glPointSize(4);
     glBegin(GL_POINTS);
-    for(int i = 0; i < MAX_VERTS;i++) {
-      glVertex2f(vertices[i].x, vertices[i].y);
+
+    for(int i = 0; i < vertices.vertCount;i++) {
+      glVertex2f(vertices.verts[i].x, vertices.verts[i].y);
     }
+
     glEnd();
 
     // draw sweepLine
     glColor3f(1, 0, 0);
     glBegin(GL_LINES);
 
-    glVertex2f(sweepLine[0].x, sweepLine[0].y);
-    glVertex2f(sweepLine[1].x, sweepLine[1].y);
+    glVertex2f(0, sweepLine);
+    glVertex2f(width, sweepLine);
 
     glEnd();
 
     // draw beach line between sweep line and vertices
-    for(int i = 0; i < MAX_VERTS;i++) {
-      drawBeachLine(sweepLine, vertices[i]);
+    for(int i = 0; i < vertices.vertCount;i++) {
+      drawBeachLine(sweepLine, vertices.verts[i]);
     }
 
-    sweepLine[0].y = sweepLine[0].y >= 480 ? 0 : sweepLine[0].y + 1;
-    sweepLine[1].y = sweepLine[0].y;
+    if(yScroll < 0) yScroll = 0;
+
+    if(!paused) {
+      sweepLine = sweepLine >= height/2 ? 0 : sweepLine + 1;
+    } else if (!scroll_top && !scroll_bot){
+      scrollSweep(&sweepLine, window);
+    }
+
+    if(paused) {
+      scrollTop(window);
+      scrollBot(window);
+
+      if(scroll_top) {
+        sweepLine = fLerp(sweepLine, 0, 0.1);
+      } else if(scroll_bot) {
+        sweepLine = fLerp(sweepLine, height/2, 0.1);
+      }
+
+      if(fabs(sweepLine - 0) <= 0.1) {
+        scroll_top = false;
+      }
+      if(fabs(sweepLine - height/2) <= 0.1){
+        scroll_bot = false;
+      }
+    }
+
+    yScroll = sweepLine;
+
+    makeVertex2D(&vertices, window);
+    pauseAndStart(sweepLine, window);
 
     // Swap front and back buffers
     glfwSwapBuffers(window);
@@ -87,6 +126,8 @@ int main() {
     glfwPollEvents();
 
   }
+
+  free(vertices.verts);
 
   glfwTerminate();
   return 0;

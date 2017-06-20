@@ -132,25 +132,33 @@ void drawBeachLine(float sweepLine, vertArray vertices) {
   for(int j = 0; j < vertices.vertCount;j++) {
     if(fabs(sweepLine-vertices.verts[j].y) <= 0.1) {
       // printf("braca!\n");
-      glColor3f(0, 1, 0);
-      glBegin(GL_LINES);
-      glVertex2f(vertices.verts[j].x, 0);
-      glVertex2f(vertices.verts[j].x, vertices.verts[j].y);
-      glEnd();
+      // glColor3f(0, 1, 0);
+      // glBegin(GL_LINES);
+      // glVertex2f(vertices.verts[j].x, 0);
+      // glVertex2f(vertices.verts[j].x, vertices.verts[j].y);
+      // glEnd();
     } else if(sweepLine > vertices.verts[j].y) {
 
       // draw arch parabola of beach line
       glColor3f(0, 1, 0);
       glBegin(GL_LINE_STRIP);
-      for(int i = 0; i < width;i+=1) {
+      for(int i = 0; i < width;i+=5) {
         float x = i;
-        // From DeBerg's "Algorithms and Applications"
-        float y = beachLineFunc(x, vertices.verts[j], sweepLine);
+
+        int closest = j;
         for(int k = 0; k < vertices.vertCount;k++) {
-          if(getDist((v2){x, y}, vertices.verts[j]) > getDist((v2){x, y}, vertices.verts[k]))
-            y = beachLineFunc(x, vertices.verts[k], sweepLine);
+          if(vertices.verts[k].y < sweepLine) {
+            float yClosest = beachLineFunc(x, vertices.verts[closest], sweepLine);
+            float yK = beachLineFunc(x, vertices.verts[k], sweepLine);
+            closest = getDist((v2){x, yClosest}, vertices.verts[closest]) < getDist((v2){x,yK}, vertices.verts[k]) ? closest : k;
+          }
         }
-        glVertex2f(x, y);
+
+        // From DeBerg's "Algorithms and Applications"
+        float y = beachLineFunc(x, vertices.verts[closest], sweepLine);
+
+        if(-50 < y && y < height)
+          glVertex2f(x, y);
       }
       glEnd();
     }

@@ -150,7 +150,9 @@ void drawBeachLine(float sweepLine, vertArray vertices) {
           if(vertices.verts[k].y < sweepLine) {
             float yClosest = beachLineFunc(x, vertices.verts[closest], sweepLine);
             float yK = beachLineFunc(x, vertices.verts[k], sweepLine);
-            closest = getDist((v2){x, yClosest}, vertices.verts[closest]) < getDist((v2){x,yK}, vertices.verts[k]) ? closest : k;
+            //closest = getDist((v2){x, yClosest}, vertices.verts[closest]) < getDist((v2){x,yK}, vertices.verts[k]) ? closest : k;
+            closest = sqrDist((v2){x, yClosest}, vertices.verts[closest]) < sqrDist((v2){x,yK}, vertices.verts[k]) ? closest : k;
+            // closest = manhattan((v2){x, yClosest}, vertices.verts[closest]) < manhattan((v2){x,yK}, vertices.verts[k]) ? closest : k;
           }
         }
 
@@ -163,4 +165,12 @@ void drawBeachLine(float sweepLine, vertArray vertices) {
       glEnd();
     }
   }
+}
+
+// for faster comparision
+float sqrDist(v2 a, v2 b) {
+  return (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y);
+}
+float manhattan(v2 a, v2 b) {
+  return fabs(a.x-b.x) + fabs(a.y-b.y);
 }

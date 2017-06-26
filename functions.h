@@ -52,3 +52,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 float beachLineFunc(float x, v2 site, float sweepLine);
 v2 beachLineIntersection(v2 siteA, v2 siteB, float sweepLine);
 void drawBeachLine(float sweepLine, vertArray vertex);
+
+// for faster comparision
+float sqrDist(v2 a, v2 b);
+float manhattan(v2 a, v2 b);
